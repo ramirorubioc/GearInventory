@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 
-URL = "https://www.bg-wiki.com/ffxi/Category:Artifact_Armor"
+URL = "https://www.bg-wiki.com/ffxi/Wakido_Armor_Set"
 GEAR_TABLE_OFFSET = 2
 SETS_TABLE_OFFSET = 7
 BASE_URL = "https://www.bg-wiki.com/ffxi/"
@@ -18,12 +19,25 @@ def scrape_gear_names(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
     tables = soup.find_all("table")
-    gearTable = (tables[GEAR_TABLE_OFFSET].find_all("td"))
+    offset = 0
+    gear = ""
+    while offset < len(tables):
+        header = str(tables[offset].find(string=re.compile("Set")))
+        if header != "None":
+            break
+        offset += 1
+    tables = tables[offset]
+    for table in tables.find("th"):
+        for string in table:
+            if len(string)>1:
+                header = string
+    header = header[:header.find(" ")]
     gearList = []
-    for line in gearTable:
-        for string in line.find("a"):
-            gearList.append(string)
-    return(gearList)
+    for table in tables.find_all("a"):
+        for string in table:
+            if (string.find(header)>=0):
+                gearList.append(string)
+    return gearList
 
 def scrape_set_url(url):
     """
